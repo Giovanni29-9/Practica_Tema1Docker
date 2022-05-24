@@ -1,0 +1,62 @@
+version: '3.8' 
+services:
+#En esta parte es lo del servicio de Node-Red va dependiendo de la base de datos de Influx
+    node-red:
+        depends_on:
+            - influx
+        #Es lo cual va tener el nombre del contenedor
+        container_name: nodered
+        #Aqui vamos a utilizar la imagen de Node-Red
+        image: nodered/node-red:latest
+        #Aqui es el puerto en lo cual va estar 
+        ports:
+            - 1880:1880
+        #siempre se va a inicializarla
+        restart: always
+        #En esta parte será la ubicación del volumen de archivos cache
+        volumes:
+            - ./data:/data
+#En esta parte va ser el servicio de influxdb
+    influx:
+        #Poner el nombre del contenedor
+        container_name: influxdb
+        #imagen a utilizar en lo cual vamos a tener en influx
+        image: influxdb:latest
+        #En esta parte vamos a crear las variables de entorno
+        environment:
+            - INFLUXDB_HTTP_AUTH_ENABLED=TRUE #En lo cual se va inicializar la DB
+            - INFLUXDB_ADMIN_USER=admin  #El usuario del administrador 
+            - INFLUXDB_ADMIN_PASSWORD=admin #El usuario del administrador en lo cual es el password
+            - INFLUXDB_USER=user #El usuario del usuario
+            - INFLUXDB_USER_PASSWORD=user #El password del usuario
+            - INFLUXDB_READ_USER=user #El usuario en lo cual va tener el usuario del consultor
+            - INFLUXDB_READ_USER_PASSWORD=userR #El password para el usuario del consultor
+            - INFLUXDB_DB=influxdb
+        #En esta parte va ser la ubicación del volumen de archivos cache
+        volumes:
+            - influx_data:/var/lib/influxdb
+#Este es el servicio de grafana
+    grafana:
+        depends_on:
+            - influx
+        #El nombre que va tener el nombre del contenedor
+        container_name: grafana
+        #La imagen que se va a utilizar
+        image: grafana/grafana:latest
+        #Estas serán las variables de entorno
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin #El usuario del Administrador Security
+            - GF_SECURITY_ADMIN_PASSWORD=admin #El password del Administrador Security
+            - GRAFANA_INFLUX_DB=influxdb #El nombre de la base de datos 
+            - GRAFANA_INFLUX_USER=admin #El usuario 
+            - GRAFANA_INFLUX_PASSWORD=admin #El password del usuario
+        #Esta sera la ubicación del volumen de archivos cache
+        volumes:
+            - grafana_data:/var/lib/grafana
+        #En esta parte va ser la asignación de puerto
+        ports:
+            - 3000:3000
+#Los volumnes para cada servicio 
+volumes:
+    grafana_data:
+    influx_data:
